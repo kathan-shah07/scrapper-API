@@ -47,8 +47,14 @@ git push origin main
 
 1. Go to [share.streamlit.io](https://share.streamlit.io)
 2. Connect your GitHub repository
-3. Set the main file to: **`streamlit_with_api.py`**
+3. Set the main file to: **`streamlit_cloud.py`** (use this for Streamlit Cloud)
 4. Deploy!
+
+**Important:** 
+- Use `streamlit_cloud.py` for Streamlit Cloud deployment
+- Streamlit Cloud returns HTML with embedded JSON (not pure JSON like FastAPI)
+- Use the `parse_streamlit_json.py` helper to extract JSON and get the same behavior as FastAPI
+- The helper function `call_streamlit_api()` provides the exact same interface as calling FastAPI
 
 ### Step 3: Access Your API
 
@@ -57,6 +63,25 @@ Once deployed, your API will be accessible via your Streamlit Cloud URL:
 ```
 https://your-app-name.streamlit.app/?api=scrape&url=https://groww.in/mutual-funds/...
 ```
+
+**Getting FastAPI-like Behavior on Streamlit Cloud:**
+
+Since Streamlit Cloud returns HTML with embedded JSON, use the `parse_streamlit_json.py` helper to get the exact same behavior as FastAPI:
+
+```python
+from parse_streamlit_json import call_streamlit_api
+
+# This works exactly like calling FastAPI!
+result = call_streamlit_api(
+    "https://your-app.streamlit.app",
+    "https://groww.in/mutual-funds/..."
+)
+
+if result and result.get("success"):
+    fund_data = result["data"]  # Same format as FastAPI response
+```
+
+The `call_streamlit_api()` function provides the **exact same interface** as FastAPI, so your code works identically!
 
 ## API Usage
 

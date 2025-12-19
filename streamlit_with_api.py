@@ -10,75 +10,40 @@ This file combines:
 Main file to deploy on Streamlit Cloud.
 """
 
-# Set page config early to avoid issues
 import streamlit as st
-
-# Basic imports that should always work
+import requests
 import json
+import threading
+import uvicorn
 import time
 import os
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
-# Try imports that might fail
-try:
-    import requests
-except ImportError:
-    st.error("requests library not found. Please install: pip install requests")
-    st.stop()
-
-try:
-    from groww_scraper import GrowwScraper
-except ImportError as e:
-    st.error(f"Failed to import groww_scraper: {e}")
-    st.stop()
-
-# Try to import FastAPI components (may fail on Streamlit Cloud)
-FASTAPI_AVAILABLE = False
-try:
-    import threading
-    import uvicorn
-    from fastapi import FastAPI, HTTPException, Query
-    from fastapi.responses import JSONResponse
-    from fastapi.middleware.cors import CORSMiddleware
-    from pydantic import BaseModel, HttpUrl
-    FASTAPI_AVAILABLE = True
-except ImportError as e:
-    # FastAPI not available - app will work without it
-    # Create dummy classes to avoid NameError
-    class HTTPException(Exception):
-        def __init__(self, status_code, detail):
-            self.status_code = status_code
-            self.detail = detail
-    Query = None
-    BaseModel = object
-    HttpUrl = str
-    threading = None
-    uvicorn = None
-    print(f"FastAPI not available: {e}. App will work without FastAPI server.")
-
-# Scraper already imported above
+from groww_scraper import GrowwScraper
 
 # ==================== FastAPI Setup ====================
 # FastAPI application for REST API endpoints
-# This runs in a background thread to provide API access (only if FastAPI is available)
-api_app = None
-if FASTAPI_AVAILABLE:
-    api_app = FastAPI(
-        title="Groww Mutual Fund Scraper API",
-        description="REST API for scraping Groww mutual fund pages",
-        version="1.0.0"
-    )
-    
-    # Enable CORS (Cross-Origin Resource Sharing) to allow requests from any origin
-    # This is necessary for external workflows like n8n to access the API
-    api_app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],  # In production, you may want to restrict this to specific domains
-        allow_credentials=True,
-        allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
-        allow_headers=["*"],  # Allow all headers
-    )
+# This runs in a background thread to provide API access
+api_app = FastAPI(
+    title="Groww Mutual Fund Scraper API",
+    description="REST API for scraping Groww mutual fund pages",
+    version="1.0.0"
+)
+
+# Enable CORS (Cross-Origin Resource Sharing) to allow requests from any origin
+# This is necessary for external workflows like n8n to access the API
+api_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, you may want to restrict this to specific domains
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Default configuration for the scraper
 # These settings control how the scraper behaves
@@ -89,26 +54,19 @@ DEFAULT_SCRAPER_CONFIG = {
     "download_first": False  # Whether to download HTML before scraping (slower but more reliable)
 }
 
-# Pydantic models for request/response validation (only if FastAPI is available)
-if FASTAPI_AVAILABLE:
-    class ScrapeRequest(BaseModel):
-        """Request model for POST /scrape endpoint"""
-        url: HttpUrl  # Validated URL field
-        use_interactive: Optional[bool] = True  # Optional: use browser automation
-        download_first: Optional[bool] = False  # Optional: download HTML first
+# Pydantic models for request/response validation
+class ScrapeRequest(BaseModel):
+    """Request model for POST /scrape endpoint"""
+    url: HttpUrl  # Validated URL field
+    use_interactive: Optional[bool] = True  # Optional: use browser automation
+    download_first: Optional[bool] = False  # Optional: download HTML first
 
-    class ScrapeResponse(BaseModel):
-        """Response model for all scraping endpoints"""
-        success: bool  # Whether scraping was successful
-        data: Optional[dict] = None  # Scraped fund data (if successful)
-        error: Optional[str] = None  # Error message (if failed)
-        message: Optional[str] = None  # Status message
-else:
-    # Dummy classes if FastAPI is not available
-    class ScrapeRequest:
-        pass
-    class ScrapeResponse:
-        pass
+class ScrapeResponse(BaseModel):
+    """Response model for all scraping endpoints"""
+    success: bool  # Whether scraping was successful
+    data: Optional[dict] = None  # Scraped fund data (if successful)
+    error: Optional[str] = None  # Error message (if failed)
+    message: Optional[str] = None  # Status message
 
 # ==================== Shared Scraper Function ====================
 def scrape_fund(url: str, use_interactive: bool = True, download_first: bool = False):
@@ -132,106 +90,104 @@ def scrape_fund(url: str, use_interactive: bool = True, download_first: bool = F
     return scraper.parse_fund_data(url)
 
 # ==================== FastAPI Endpoints ====================
-# Only define endpoints if FastAPI is available
-if FASTAPI_AVAILABLE and api_app:
-    @api_app.get("/")
-    async def root():
-        """Root endpoint - returns API information and available endpoints"""
-        return {
-            "name": "Groww Mutual Fund Scraper API",
-            "version": "1.0.0",
-            "endpoints": {
-                "GET /scrape": "Scrape a fund page (query parameter: url)",
-                "POST /scrape": "Scrape a fund page (JSON body with url)",
-                "GET /health": "Health check endpoint"
-            }
+@api_app.get("/")
+async def root():
+    """Root endpoint - returns API information and available endpoints"""
+    return {
+        "name": "Groww Mutual Fund Scraper API",
+        "version": "1.0.0",
+        "endpoints": {
+            "GET /scrape": "Scrape a fund page (query parameter: url)",
+            "POST /scrape": "Scrape a fund page (JSON body with url)",
+            "GET /health": "Health check endpoint"
         }
+    }
 
-    @api_app.get("/health")
-    async def health_check():
-        """Health check endpoint - used to verify API is running"""
-        return {"status": "healthy", "service": "groww-scraper-api"}
+@api_app.get("/health")
+async def health_check():
+    """Health check endpoint - used to verify API is running"""
+    return {"status": "healthy", "service": "groww-scraper-api"}
 
-    @api_app.get("/scrape")
-    async def scrape_get(
-        url: str = Query(..., description="URL of the Groww mutual fund page to scrape"),
-        use_interactive: Optional[bool] = Query(None, description="Use interactive browser (Playwright/Selenium)"),
-        download_first: Optional[bool] = Query(None, description="Download HTML first before scraping")
-    ):
-        """
-        Scrape a Groww mutual fund page using GET request.
+@api_app.get("/scrape", response_model=ScrapeResponse)
+async def scrape_get(
+    url: str = Query(..., description="URL of the Groww mutual fund page to scrape"),
+    use_interactive: Optional[bool] = Query(None, description="Use interactive browser (Playwright/Selenium)"),
+    download_first: Optional[bool] = Query(None, description="Download HTML first before scraping")
+):
+    """
+    Scrape a Groww mutual fund page using GET request.
+    
+    This endpoint accepts URL and optional parameters as query parameters.
+    Example: GET /scrape?url=https://groww.in/mutual-funds/...&use_interactive=true
+    
+    Args:
+        url: URL of the mutual fund page to scrape (required)
+        use_interactive: Whether to use browser automation (optional, default: True)
+        download_first: Whether to download HTML first (optional, default: False)
         
-        This endpoint accepts URL and optional parameters as query parameters.
-        Example: GET /scrape?url=https://groww.in/mutual-funds/...&use_interactive=true
+    Returns:
+        ScrapeResponse with success status and scraped data or error message
+    """
+    try:
+        # Validate URL format
+        if not url.startswith(('http://', 'https://')):
+            raise HTTPException(status_code=400, detail="Invalid URL format")
         
-        Args:
-            url: URL of the mutual fund page to scrape (required)
-            use_interactive: Whether to use browser automation (optional, default: True)
-            download_first: Whether to download HTML first (optional, default: False)
-            
-        Returns:
-            ScrapeResponse with success status and scraped data or error message
-        """
-        try:
-            # Validate URL format
-            if not url.startswith(('http://', 'https://')):
-                raise HTTPException(status_code=400, detail="Invalid URL format")
-            
-            # Perform scraping with provided or default settings
-            data = scrape_fund(
-                url,
-                use_interactive if use_interactive is not None else DEFAULT_SCRAPER_CONFIG["use_interactive"],
-                download_first if download_first is not None else DEFAULT_SCRAPER_CONFIG["download_first"]
-            )
-            
-            # Return response based on scraping result
-            if data is None:
-                return ScrapeResponse(
-                    success=False,
-                    error="Failed to scrape the page",
-                    message="Scraping failed"
-                )
-            
-            return ScrapeResponse(
-                success=True,
-                data=data,
-                message="Scraping completed successfully"
-            )
-        except Exception as e:
-            # Handle any errors during scraping
+        # Perform scraping with provided or default settings
+        data = scrape_fund(
+            url,
+            use_interactive if use_interactive is not None else DEFAULT_SCRAPER_CONFIG["use_interactive"],
+            download_first if download_first is not None else DEFAULT_SCRAPER_CONFIG["download_first"]
+        )
+        
+        # Return response based on scraping result
+        if data is None:
             return ScrapeResponse(
                 success=False,
-                error=str(e),
-                message="An error occurred during scraping"
+                error="Failed to scrape the page",
+                message="Scraping failed"
             )
+        
+        return ScrapeResponse(
+            success=True,
+            data=data,
+            message="Scraping completed successfully"
+        )
+    except Exception as e:
+        # Handle any errors during scraping
+        return ScrapeResponse(
+            success=False,
+            error=str(e),
+            message="An error occurred during scraping"
+        )
 
-    @api_app.post("/scrape")
-    async def scrape_post(request: ScrapeRequest):
-        """
-        Scrape a Groww mutual fund page using POST request.
+@api_app.post("/scrape", response_model=ScrapeResponse)
+async def scrape_post(request: ScrapeRequest):
+    """
+    Scrape a Groww mutual fund page using POST request.
+    
+    This endpoint accepts URL and optional parameters in JSON body.
+    Example: POST /scrape with body {"url": "https://groww.in/mutual-funds/..."}
+    
+    Args:
+        request: ScrapeRequest object containing URL and optional parameters
         
-        This endpoint accepts URL and optional parameters in JSON body.
-        Example: POST /scrape with body {"url": "https://groww.in/mutual-funds/..."}
-        
-        Args:
-            request: ScrapeRequest object containing URL and optional parameters
-            
-        Returns:
-            ScrapeResponse with success status and scraped data or error message
-        """
-        try:
-            url = str(request.url)
-            # Perform scraping with provided or default settings
-            data = scrape_fund(
-                url,
-                request.use_interactive if request.use_interactive is not None else DEFAULT_SCRAPER_CONFIG["use_interactive"],
-                request.download_first if request.download_first is not None else DEFAULT_SCRAPER_CONFIG["download_first"]
-            )
-            if data is None:
-                return ScrapeResponse(success=False, error="Failed to scrape", message="Scraping failed")
-            return ScrapeResponse(success=True, data=data, message="Scraping completed successfully")
-        except Exception as e:
-            return ScrapeResponse(success=False, error=str(e), message="An error occurred")
+    Returns:
+        ScrapeResponse with success status and scraped data or error message
+    """
+    try:
+        url = str(request.url)
+        # Perform scraping with provided or default settings
+        data = scrape_fund(
+            url,
+            request.use_interactive if request.use_interactive is not None else DEFAULT_SCRAPER_CONFIG["use_interactive"],
+            request.download_first if request.download_first is not None else DEFAULT_SCRAPER_CONFIG["download_first"]
+        )
+        if data is None:
+            return ScrapeResponse(success=False, error="Failed to scrape", message="Scraping failed")
+        return ScrapeResponse(success=True, data=data, message="Scraping completed successfully")
+    except Exception as e:
+        return ScrapeResponse(success=False, error=str(e), message="An error occurred")
 
 # ==================== Start FastAPI Server ====================
 def start_api_server():
@@ -241,9 +197,6 @@ def start_api_server():
     This allows the API to run alongside the Streamlit app.
     The server runs on port 8000 (or PORT environment variable if set).
     """
-    if not FASTAPI_AVAILABLE or not api_app:
-        return
-    
     try:
         # Try to get port from environment (Streamlit Cloud may set this)
         port = int(os.getenv("PORT", 8000))
@@ -258,31 +211,15 @@ def start_api_server():
 
 # Initialize API server in background thread (only once per session)
 # This ensures the FastAPI server starts when Streamlit loads
-# Note: On Streamlit Cloud, background threads may not work, so we make this optional
 if 'api_server_started' not in st.session_state:
-    # Check if we're on Streamlit Cloud
-    streamlit_addr = os.getenv("STREAMLIT_SERVER_ADDRESS", "")
-    is_streamlit_cloud = any(domain in streamlit_addr for domain in [".streamlit.app", ".streamlit.io"])
-    
-    # Only start FastAPI server if FastAPI is available and not on Streamlit Cloud
-    # Streamlit Cloud doesn't support background servers well, so we skip it entirely
-    if FASTAPI_AVAILABLE and api_app and not is_streamlit_cloud:
-        try:
-            # Start server in background thread (non-blocking)
-            api_thread = threading.Thread(target=start_api_server, daemon=True)
-            api_thread.start()
-            st.session_state.api_server_started = True
-            # Don't sleep - let it start in background without blocking
-        except Exception as e:
-            st.session_state.api_server_started = False
-            st.session_state.api_error = str(e)
-    else:
-        # On Streamlit Cloud or if FastAPI unavailable, don't start server
+    try:
+        api_thread = threading.Thread(target=start_api_server, daemon=True)
+        api_thread.start()
+        st.session_state.api_server_started = True
+        time.sleep(2)  # Give server time to start before first request
+    except Exception as e:
         st.session_state.api_server_started = False
-        if is_streamlit_cloud:
-            st.session_state.api_error = "FastAPI server not available on Streamlit Cloud - use Streamlit URL for API access"
-        else:
-            st.session_state.api_error = "FastAPI not available"
+        st.session_state.api_error = str(e)
 
 # ==================== Streamlit API Proxy ====================
 # This section allows API access through Streamlit URL query parameters
