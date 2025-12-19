@@ -1,0 +1,37 @@
+# ==================== Core Dependencies ====================
+# Essential libraries for web scraping and HTML parsing
+
+requests>=2.31.0              # HTTP library for making requests to web pages
+beautifulsoup4>=4.12.0        # HTML/XML parser for extracting data from web pages
+lxml>=4.9.0                    # Fast XML/HTML parser backend for BeautifulSoup
+
+# ==================== Web Scraping Automation ====================
+# Optional but recommended for handling dynamic content (JavaScript-rendered pages)
+
+playwright>=1.40.0            # Modern browser automation (recommended for cloud environments)
+selenium>=4.15.0              # Alternative browser automation (fallback option)
+chromedriver-autoinstaller>=0.6.0  # Automatic ChromeDriver installation for Selenium
+
+# ==================== FastAPI and REST API ====================
+# Required for running the API server (runs in background thread)
+
+fastapi>=0.104.0              # Modern, fast web framework for building APIs
+uvicorn[standard]>=0.24.0    # ASGI server for running FastAPI (with standard extras)
+pydantic>=2.5.0               # Data validation using Python type annotations
+
+# ==================== Streamlit UI ====================
+# Required for the web interface and API proxy functionality
+
+streamlit>=1.28.0             # Web framework for creating the UI and API proxy
+
+# ==================== Additional Utilities ====================
+# Supporting libraries
+
+python-multipart>=0.0.6       # Required for FastAPI to handle form data and file uploads
+
+# ==================== Testing Dependencies ====================
+# Required for running unit tests
+
+pytest>=7.4.0                 # Testing framework
+pytest-cov>=4.1.0              # Coverage reporting
+httpx>=0.24.0                  # HTTP client for FastAPI TestClient
