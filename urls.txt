@@ -1,0 +1,9 @@
+# Groww Mutual Fund URLs
+# Add one URL per line
+# Lines starting with # are ignored
+# Example:
+https://groww.in/mutual-funds/nippon-india-large-cap-fund-direct-growth
+https://groww.in/mutual-funds/nippon-india-elss-tax-saver-fund-direct-growth
+https://groww.in/mutual-funds/nippon-india-small-cap-fund-direct-growth
+https://groww.in/mutual-funds/nippon-india-flexi-cap-fund-direct-growth
+https://groww.in/mutual-funds/nippon-india-multi-cap-fund-direct-growth

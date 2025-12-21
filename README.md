@@ -1,17 +1,16 @@
-# Groww Mutual Fund Scraper - REST API & Streamlit UI
+# Groww Mutual Fund Scraper
 
-A comprehensive scraper for Groww mutual fund pages with both REST API and Streamlit UI interfaces, designed for Streamlit Cloud deployment.
+A comprehensive scraper for Groww mutual fund pages that extracts structured data and saves to JSON files.
 
 ## Features
 
 - 📊 Scrapes comprehensive mutual fund data from Groww pages
-- 🔌 REST API endpoint accessible via Streamlit URL (compatible with n8n, HTTP triggers, etc.)
-- 🖥️ Streamlit UI for manual testing and interaction
 - 🤖 Supports Playwright and Selenium for dynamic content
 - 📁 Structured JSON output
-- ☁️ Optimized for Streamlit Cloud deployment
+- 🔄 Batch processing of multiple URLs
+- 💾 Saves individual JSON files for each fund
 
-## Quick Start
+## Installation
 
 ### 1. Install Python Dependencies
 
@@ -25,188 +24,183 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 3. Run Locally
+## Quick Start
+
+### Method 1: Using Shell Script (Recommended)
+
+**Linux/Mac:**
+```bash
+chmod +x scrape.sh
+./scrape.sh
+```
+
+**Windows:**
+```cmd
+scrape.bat
+```
+
+### Method 2: Using Python Script Directly
 
 ```bash
-streamlit run streamlit_with_api.py
+python batch_scrape.py --file urls.txt
 ```
 
-The app will be available at `http://localhost:8501`
-
-## Deployment to Streamlit Cloud
-
-### Step 1: Push to GitHub
+### Method 3: Command Line URLs
 
 ```bash
-git add .
-git commit -m "Deploy Groww Scraper"
-git push origin main
+python batch_scrape.py https://groww.in/mutual-funds/fund1 https://groww.in/mutual-funds/fund2
 ```
 
-### Step 2: Deploy on Streamlit Cloud
+## Usage
 
-1. Go to [share.streamlit.io](https://share.streamlit.io)
-2. Connect your GitHub repository
-3. Set the main file to: **`streamlit_cloud.py`** (use this for Streamlit Cloud)
-4. Deploy!
+### 1. Prepare URLs File
 
-**Important:** 
-- Use `streamlit_cloud.py` for Streamlit Cloud deployment
-- Streamlit Cloud returns HTML with embedded JSON (not pure JSON like FastAPI)
-- Use the `parse_streamlit_json.py` helper to extract JSON and get the same behavior as FastAPI
-- The helper function `call_streamlit_api()` provides the exact same interface as calling FastAPI
-
-### Step 3: Access Your API
-
-Once deployed, your API will be accessible via your Streamlit Cloud URL:
+Create a file named `urls.txt` (or use `-f` to specify a different file) with one URL per line:
 
 ```
-https://your-app-name.streamlit.app/?api=scrape&url=https://groww.in/mutual-funds/...
+https://groww.in/mutual-funds/nippon-india-large-cap-fund-direct-growth
+https://groww.in/mutual-funds/sbi-large-midcap-fund-direct-growth
+https://groww.in/mutual-funds/hdfc-top-100-fund-direct-growth
 ```
 
-**Getting FastAPI-like Behavior on Streamlit Cloud:**
+Lines starting with `#` are treated as comments and ignored.
 
-Since Streamlit Cloud returns HTML with embedded JSON, use the `parse_streamlit_json.py` helper to get the exact same behavior as FastAPI:
+### 2. Run the Scraper
 
-```python
-from parse_streamlit_json import call_streamlit_api
+**Using shell script:**
+```bash
+# Basic usage (uses urls.txt)
+./scrape.sh
 
-# This works exactly like calling FastAPI!
-result = call_streamlit_api(
-    "https://your-app.streamlit.app",
-    "https://groww.in/mutual-funds/..."
-)
+# Custom URLs file
+./scrape.sh -f my_urls.txt
 
-if result and result.get("success"):
-    fund_data = result["data"]  # Same format as FastAPI response
+# Disable browser automation (faster, but may miss dynamic content)
+./scrape.sh --no-interactive
+
+# Download HTML first (more reliable, but slower)
+./scrape.sh --download-first
 ```
 
-The `call_streamlit_api()` function provides the **exact same interface** as FastAPI, so your code works identically!
+**Using Python directly:**
+```bash
+# Basic usage
+python batch_scrape.py --file urls.txt
 
-## API Usage
+# Custom output directory
+python batch_scrape.py --file urls.txt --output-dir output/json_files
 
-### ⚠️ Important: Use FastAPI Server for Pure JSON Responses
+# Disable browser automation
+python batch_scrape.py --file urls.txt --no-interactive
 
-**For API integrations (n8n, HTTP triggers, etc.), use the FastAPI server on port 8000**, not the Streamlit URL. The Streamlit URL returns HTML with embedded JSON, which is fine for browser testing but not ideal for API integrations.
+# Download HTML first
+python batch_scrape.py --file urls.txt --download-first
+```
 
-### FastAPI Server Endpoints (Pure JSON)
+### 3. Check Results
 
-**Local Development:**
-- **Scrape (GET)**: `http://localhost:8000/scrape?url=https://groww.in/mutual-funds/...`
-- **Scrape (POST)**: `http://localhost:8000/scrape` (with JSON body)
-- **Health Check**: `http://localhost:8000/health`
+JSON files are saved in `data/mutual_funds/` directory (or your specified output directory).
 
-**Streamlit Cloud Deployment:**
-- The FastAPI server runs in the background but may not be accessible externally
-- For Streamlit Cloud, use the Streamlit URL for testing (returns HTML with JSON)
-- For production API, consider deploying FastAPI separately
+A summary file `scraping_summary.json` is also created with:
+- Total URLs processed
+- Successful scrapes
+- Failed scrapes
+- List of generated files
+- Error details
 
-### API Response Format
+## Command Line Options
+
+```
+Options:
+  -f, --file FILE          File containing URLs (one per line) [default: urls.txt]
+  -o, --output-dir DIR     Output directory for JSON files [default: data/mutual_funds]
+  --no-interactive         Disable browser automation (Playwright/Selenium)
+  --download-first         Download HTML before scraping (slower but more reliable)
+  -h, --help               Show help message
+```
+
+## Output Format
+
+Each fund is saved as a separate JSON file with the following structure:
 
 ```json
-{
-  "success": true,
-  "data": {
+[
+  {
     "fund_name": "...",
-    "nav": {...},
-    "returns": {...},
-    "aum": "...",
-    "summary": {...},
-    "cost_and_tax": {...},
-    "portfolio": {...},
-    ...
-  },
-  "message": "Scraping completed successfully"
-}
+    "nav": {
+      "value": "₹100.50",
+      "as_of": "01 Jan 2024"
+    },
+    "fund_size": "₹1,000Cr",
+    "aum": "₹500Cr",
+    "returns": {
+      "1y": "12.5%",
+      "3y": "15.2%",
+      "5y": "18.0%",
+      "since_inception": "16.5%"
+    },
+    "summary": {
+      "fund_category": "Equity",
+      "fund_type": "Large Cap",
+      "risk_level": "Very High Risk",
+      "lock_in_period": "",
+      "rating": null
+    },
+    "minimum_investments": {
+      "min_sip": "₹500",
+      "min_first_investment": "₹5,000",
+      "min_2nd_investment_onwards": "₹1,000"
+    },
+    "cost_and_tax": {
+      "expense_ratio": "1.5%",
+      "exit_load": "Nil",
+      "stamp_duty": "0.005%",
+      "tax_implication": "..."
+    },
+    "top_5_holdings": [...],
+    "advanced_ratios": {...},
+    "category_info": {...},
+    "faq": [...],
+    "source_url": "https://groww.in/mutual-funds/...",
+    "last_scraped": "2024-01-15"
+  }
+]
 ```
 
-### Using with Python
+## Examples
 
-```python
-import requests
-
-# Use FastAPI server for pure JSON (recommended for APIs)
-response = requests.get(
-    "http://localhost:8000/scrape",  # Use port 8000 for FastAPI
-    params={
-        "url": "https://groww.in/mutual-funds/..."
-    }
-)
-
-data = response.json()
-if data["success"]:
-    fund_data = data["data"]
-    print(fund_data)
-```
-
-**Note:** For Streamlit Cloud deployment, the FastAPI server may not be accessible. In that case, parse the JSON from the HTML response or use the Streamlit URL for testing purposes.
-
-### Integration with n8n
-
-**For Local Development:**
-1. Add an **HTTP Request** node in your n8n workflow
-2. Configure:
-   - **Method**: GET
-   - **URL**: `http://localhost:8000/scrape` (FastAPI server)
-   - **Query Parameters**:
-     - `url`: `{{ $json.url }}`
-3. The response will contain:
-   - `success`: boolean indicating success/failure
-   - `data`: scraped fund data (if successful)
-   - `error`: error message (if failed)
-   - `message`: status message
-
-**For Streamlit Cloud:**
-- The FastAPI server may not be accessible externally
-- You may need to parse JSON from HTML response or deploy FastAPI separately
-
-### Using with cURL
+### Example 1: Basic Batch Scraping
 
 ```bash
-# Scrape a fund
-curl "https://your-app.streamlit.app/?api=scrape&url=https://groww.in/mutual-funds/..."
+# Create urls.txt with your URLs
+echo "https://groww.in/mutual-funds/fund1" > urls.txt
+echo "https://groww.in/mutual-funds/fund2" >> urls.txt
 
-# Health check
-curl "https://your-app.streamlit.app/?api=health"
+# Run scraper
+./scrape.sh
 ```
 
-## Local Development
-
-### Run Streamlit App
+### Example 2: Scrape Single URL
 
 ```bash
-streamlit run streamlit_with_api.py
+python batch_scrape.py https://groww.in/mutual-funds/nippon-india-large-cap-fund-direct-growth
 ```
 
-The app includes:
-- **UI**: Manual scraping interface at `http://localhost:8501`
-- **API**: Accessible via `http://localhost:8501/?api=scrape&url=...`
+### Example 3: Custom Output Directory
 
-### Direct Python Usage
-
-```python
-from groww_scraper import GrowwScraper
-
-scraper = GrowwScraper()
-data = scraper.parse_fund_data("https://groww.in/mutual-funds/...")
-print(data)
+```bash
+python batch_scrape.py --file urls.txt --output-dir output/funds
 ```
 
-## File Structure
+### Example 4: Fast Mode (No Browser)
 
-```
-.
-├── groww_scraper.py          # Core scraper class (required)
-├── streamlit_with_api.py    # Main app file for Streamlit Cloud (required)
-├── requirements.txt          # Python dependencies (required)
-├── README.md                 # This file
-└── .streamlit/
-    └── config.toml          # Streamlit configuration (optional)
+```bash
+python batch_scrape.py --file urls.txt --no-interactive
 ```
 
 ## Configuration
 
-The scraper supports several configuration options in `streamlit_with_api.py`:
+The scraper supports several configuration options:
 
 - `use_interactive`: Use Playwright/Selenium for dynamic content (default: True)
 - `download_first`: Download HTML before scraping (default: False)
@@ -230,37 +224,34 @@ If Selenium fails, ensure ChromeDriver is installed:
 pip install chromedriver-autoinstaller
 ```
 
-### API Not Responding on Streamlit Cloud
-
-- Check that you're using the correct query parameter format: `?api=scrape&url=...`
-- Verify the Streamlit app is running and accessible
-- Check Streamlit Cloud logs for errors
-
 ### Scraping Fails
 
 - Ensure Playwright/Selenium dependencies are installed
 - Check that the target URL is accessible
-- Review error messages in the API response
-- Try setting `use_interactive=True` for dynamic content
+- Try using `--download-first` for more reliable extraction
+- Check error messages in `scraping_summary.json`
 
 ### Timeout Issues
 
-- Streamlit Cloud has execution time limits
-- Consider optimizing the scraper for faster execution
-- Use `download_first=False` to speed up scraping
+- Some pages may take longer to load
+- Consider using `--download-first` for better reliability
+- Check your internet connection
 
-## API Query Parameters
+## File Structure
 
-### Scrape Endpoint
-
-- `api` (required): Set to `"scrape"`
-- `url` (required): URL of the Groww mutual fund page
-- `use_interactive` (optional): `"true"` or `"false"` (default: `"true"`)
-- `download_first` (optional): `"true"` or `"false"` (default: `"false"`)
-
-### Health Check
-
-- `api` (required): Set to `"health"`
+```
+.
+├── groww_scraper.py          # Core scraper class
+├── batch_scrape.py           # Batch scraping script
+├── scrape.sh                 # Shell script (Linux/Mac)
+├── scrape.bat                # Batch script (Windows)
+├── urls.txt                  # URLs file template
+├── requirements.txt          # Python dependencies
+├── README.md                 # This file
+└── data/
+    ├── mutual_funds/         # Output JSON files
+    └── downloaded_html/      # Temporary HTML files
+```
 
 ## License
 
@@ -268,4 +259,4 @@ This project is provided as-is for educational and personal use.
 
 ## Support
 
-For issues or questions, please check the code comments in `streamlit_with_api.py` and `groww_scraper.py` for detailed implementation notes.
+For issues or questions, please check the code comments in `groww_scraper.py` for detailed implementation notes.

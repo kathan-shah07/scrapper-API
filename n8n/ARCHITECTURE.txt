@@ -1,0 +1,144 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    N8N WORKFLOW JSON ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         TOP-LEVEL STRUCTURE                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+{
+  "name": "Workflow Name",              // Workflow display name
+  "nodes": [...],                       // Array of workflow nodes
+  "connections": {...},                  // Node connections/relationships
+  "pinData": {},                        // Pinned data for testing
+  "active": true/false,                 // Whether workflow is active
+  "settings": {...},                    // Workflow settings
+  "versionId": "uuid",                  // Version identifier
+  "meta": {...},                        // Metadata
+  "id": "workflow-id",                  // Unique workflow ID
+  "tags": []                            // Workflow tags
+}
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            NODE STRUCTURE                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Each node in the "nodes" array contains:
+
+{
+  "id": "unique-node-id",               // Unique identifier
+  "name": "Node Display Name",          // Human-readable name
+  "type": "node-type",                  // Node type (e.g., "n8n-nodes-base.gmailTool")
+  "typeVersion": 1,                     // Version of node type
+  "position": [x, y],                   // Visual position [x-coordinate, y-coordinate]
+  "parameters": {...},                  // Node-specific configuration
+  "credentials": {...},                 // Optional: Authentication credentials
+  "webhookId": "uuid",                  // Optional: For trigger nodes
+  "notesInFlow": true/false             // Optional: Whether notes are shown
+}
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CONNECTION STRUCTURE                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+"connections": {
+  "Source Node Name": {                 // Node that sends data
+    "connection_type": [                 // Type of connection
+      [
+        {
+          "node": "Target Node Name",   // Node that receives data
+          "type": "connection_type",     // Type: "main", "ai_tool", "ai_memory", etc.
+          "index": 0                    // Connection index
+        }
+      ]
+    ]
+  }
+}
+
+Connection Types:
+  - "main": Standard data flow
+  - "ai_tool": AI agent tool connection
+  - "ai_memory": AI agent memory connection
+  - "ai_languageModel": AI language model connection
+  - "ai_embedding": Embedding model connection
+  - "ai_document": Document loader connection
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         WORKFLOW PATTERNS                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. TRIGGER WORKFLOW (MCP server.json)
+   ┌─────────────────┐
+   │ MCP Trigger     │ (Entry point - receives external requests)
+   └────────┬────────┘
+            │ ai_tool
+            ├───► Gmail Tool
+            ├───► Google Docs Tool
+            └───► Google Sheets Tool
+
+2. RAG WORKFLOW (RAG-workflow.json)
+   
+   Data Loading Flow:
+   ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+   │ Form Trigger │───► │ Data Loader  │───► │ Vector Store │
+   └──────────────┘     └──────────────┘     └──────────────┘
+                              │
+                              ▼
+                       ┌──────────────┐
+                       │ Embeddings   │
+                       └──────────────┘
+   
+   Query Flow:
+   ┌──────────────────┐
+   │ Chat Trigger     │
+   └────────┬─────────┘
+            │
+            ▼
+   ┌──────────────────┐     ┌──────────────┐     ┌──────────────┐
+   │ AI Agent         │◄────│ Query Tool   │◄────│ Vector Store │
+   └────────┬─────────┘     └──────────────┘     └──────────────┘
+            │
+            ▼
+      ┌──────────┐
+      │ If Node  │ (Conditional routing)
+      └────┬─────┘
+           │
+           ├───► EMAIL_AGENT ──► MCP Client (Gmail)
+           ├───► GOOGLE_DOC_AGENT ──► MCP Client (Docs)
+           └───► SHEETS_AGENT ──► MCP Client (Sheets)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         KEY COMPONENTS                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+TRIGGER NODES (Entry Points):
+  - mcpTrigger: Receives MCP (Model Context Protocol) requests
+  - chatTrigger: Receives chat messages
+  - formTrigger: Receives form submissions
+  - webhook: Receives HTTP webhooks
+
+AI NODES:
+  - agent: AI agent that orchestrates actions
+  - lmChat*: Language models (Groq, Google Gemini, etc.)
+  - embeddings*: Embedding models for vector operations
+  - vectorStoreInMemory: In-memory vector database
+  - memoryBufferWindow: Conversation memory
+
+TOOL NODES:
+  - gmailTool: Send emails via Gmail
+  - googleDocsTool: Update Google Docs
+  - googleSheetsTool: Update Google Sheets
+  - mcpClientTool: Connect to MCP servers
+
+UTILITY NODES:
+  - if: Conditional branching
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DATA FLOW                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. Trigger receives input → Creates execution context
+2. Data flows through "main" connections sequentially
+3. AI agents can use tools via "ai_tool" connections
+4. Each node processes input and produces output
+5. Output flows to connected nodes via connections object
