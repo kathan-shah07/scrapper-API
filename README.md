@@ -1,10 +1,7 @@
 #n8n workflow
 ![n8n-based Mutual Fund AI Assistant System](n8n-workflow.png)
 
-##MCP output : 
-![Smaple Google Doc note](MCP-Gmail.png)
-![Smaple Google Doc note](MCP_Google_doc.png)
-
+--
 A complete 3-layer system that scrapes mutual fund data from Groww, processes it through n8n RAG workflow, and provides an intelligent AI assistant that answers questions and performs actions via MCP tools.
 
 ---
@@ -338,7 +335,11 @@ AI Agent → If Node → Route to specific agent → MCP Client → External Too
 
 **MCP Tools Available:**
 1. **Gmail Tool**: Send emails with agent response
+![Smaple Gmail note](MCP_Gmail.png)
+
 2. **Google Docs Tool**: Update Google Docs with content
+![Smaple Google Doc note](MCP_Google_doc.png)
+
 3. **Google Sheets Tool**: Log interactions in spreadsheet
 
 ### Decision Flow
