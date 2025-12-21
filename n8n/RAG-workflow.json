@@ -1,0 +1,594 @@
+{
+  "name": "RAG-workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "### Readme\nLoad your data into a vector database with the 📚 **Load Data** flow, and then use your data as chat context with the 🐕 **Retriever** flow.\n\n**Quick start**\n1. Click on the `Execute Workflow` button to run the 📚 **Load Data** flow.\n2. Click on `Open Chat` button to run the 🐕 **Retriever** flow. Then ask a question about content from your document(s)\n\n\nFor more info, check [our docs on RAG in n8n](https://docs.n8n.io/advanced-ai/rag-in-n8n/).",
+        "height": 300,
+        "width": 440,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        464,
+        -480
+      ],
+      "typeVersion": 1,
+      "id": "0d07742b-0b36-4c2e-990c-266cbe6e2d4d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "knowledge_base",
+        "toolDescription": "Use this knowledge base to answer questions from the user",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        128
+      ],
+      "id": "09c0db62-5413-440e-8c13-fb6bb66d9b6a",
+      "name": "Query Data Tool",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "content": "### Embeddings\n\nThe Insert and Retrieve operation use the same embedding node.\n\nThis is to ensure that they are using the **exact same embeddings and settings**.\n\nDifferent embeddings might not work at all, or have unintended consequences.\n",
+        "height": 240,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        -416
+      ],
+      "typeVersion": 1,
+      "id": "0cf8c647-418c-4d1a-8952-766145afca72",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1744,
+        288
+      ],
+      "id": "32e77ca3-fbb9-4414-808e-d15b6db7aecd",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://kathan007.app.n8n.cloud/mcp/af91cac1-69c4-43de-915b-21b2c3894af6",
+        "include": "selected",
+        "includeTools": [
+          "Send_a_message_in_Gmail"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        2480,
+        -384
+      ],
+      "id": "36708aa6-d573-4d3f-8120-1298ee82e5ce",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are a mutual fund facts-only assistant and gatekeeper.\n\nYour role is to evaluate the user’s query (using the query itself and recent conversation context) and choose EXACTLY ONE outcome:\n\n1) OUT_OF_DOMAIN  \n   The query is not related to mutual funds or mutual fund–adjacent topics.\n\n2) IN_DOMAIN_INCOMPLETE  \n   The query is about mutual funds but lacks required context to answer factually.\n\n3) IN_DOMAIN_COMPLETE  \n   The query is about mutual funds and contains sufficient context to answer factually.\n\n4) TOOL_CALL\n  The query is about sending email \n\nMutual fund topics include:\n- ELSS lock-in period and exit load\n- Brokerage or DP charges for mutual fund transactions\n- SIP mandates, SIP fees\n- Mutual fund categories, fund names, NAV, expense ratio, taxation\n\nCompleteness rules:\n- Lock-in / exit load → requires a specific fund name or fund category (e.g. ELSS)\n- Brokerage / DP charges → requires mutual fund transaction context\n- SIP fees / cancellation → requires explicit SIP context\n\n### OUTPUT RULES (MANDATORY)\n\n- If IN_DOMAIN_COMPLETE:\n  You must use the Query Data tool to retrieve verified mutual fund information and combine it with relevant conversation memory to accurately reconstruct the user’s intent.\nGenerate a factual and concise response based exclusively on data obtained from the Query Data tool. provide the citation link in the response\nDo not provide investment advice, opinions, interpretations, or recommendations under any circumstances.\nAfter presenting the information, ask the user:\n“Do you want this sent to your email? If yes, please provide your email ID.”\n\n\n- If IN_DOMAIN_INCOMPLETE:\n  Output 1–2 precise clarifying questions as a numbered list.\n  Ask only for missing information.\n  Do NOT include explanations or examples.\n\n- If OUT_OF_DOMAIN:\n  Output a brief (1–2 sentence) description of what this assistant can help with,\n  followed by 3 example mutual fund questions.\n  Do NOT ask follow-up questions.\n\n- If TOOL_CALL: TOOL_EMAIL  \n\n### SAFETY & BEHAVIOR RULES\n\n- Provide factual information only; no advice, opinions, or predictions\n- Do NOT ask for or store any Personally Identifiable Information (PII), including contact details, PAN, bank details, or investment amounts\n- If asked for investment advice, politely state that only factual information can be provided\n- If PII is shared, remind the user not to share personal information\n- Base answers strictly on retrieved or well-established factual information\n- Be clear, concise, and neutral in tone\n\nUser query: \n{{ $json.chatInput }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1344,
+        -272
+      ],
+      "id": "c2c0d769-03c6-4080-a836-af0355498964",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "moonshotai/kimi-k2-instruct-0905",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        -80
+      ],
+      "id": "2a50d176-5c3a-4bba-b897-b0c683161dfa",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "UNQdCM40cXjQekxX",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://kathan007.app.n8n.cloud/mcp/af91cac1-69c4-43de-915b-21b2c3894af6",
+        "include": "selected",
+        "includeTools": [
+          "update_google_sheet"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        2512,
+        112
+      ],
+      "id": "42a4d1ba-f979-4647-bc8c-4f7235b5c7b0",
+      "name": "MCP Client1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=This assistant is responsible for invoking the Gmail tool.\n\nUse the most recently generated agent response and citation link as the email body.\n\nGenerate the email subject line as last user query\n\nDo not modify, paraphrase, or alter the content of the agent response in any way."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2240,
+        -608
+      ],
+      "id": "a15ccda6-e96a-44ac-86e5-c20d5160e51e",
+      "name": "EMAIL_AGENT",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "967d80f2-39ef-4ae6-8aa3-9dddf87c2182",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "TOOL_EMAIL",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        -288
+      ],
+      "id": "e7467c60-39fe-4dc4-a18d-e135a24db5d0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload your data to test RAG",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload your file(s)",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .csv",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        512,
+        48
+      ],
+      "id": "f7a656ec-83fc-4ed2-a089-57a9def662b7",
+      "name": "Upload your file here",
+      "webhookId": "82848bc4-5ea2-4e5a-8bb6-3c09b94a8c5d"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        832,
+        464
+      ],
+      "id": "2f61fca3-0679-4fb7-83e6-a433aef44e7a",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KKebtSD5dLnsndX3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        32
+      ],
+      "id": "bf50a11f-ca6a-4e04-a6d2-42fee272b260",
+      "name": "Insert Data to Store"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        208
+      ],
+      "id": "94aecac0-03f9-4915-932b-d14a2576607b",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        1120,
+        -288
+      ],
+      "id": "b2b5b72b-baae-42c4-9936-4fc9eb7fb1e4",
+      "name": "When chat message received",
+      "webhookId": "ba7b8faa-a9a9-4902-b032-ab8ff67e565d"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://kathan007.app.n8n.cloud/mcp/af91cac1-69c4-43de-915b-21b2c3894af6",
+        "include": "selected",
+        "includeTools": [
+          "update_google_sheet"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        2496,
+        512
+      ],
+      "id": "aeac3291-c34a-4668-9ac6-fba71e7893a6",
+      "name": "MCP Client2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Invoke the MCP tool for Google Docs \n\nUse the most previous generated agent response along with the citation link as the content body.\n\nGoogle Docs: Append the same content as new document content.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2256,
+        -128
+      ],
+      "id": "b6419cba-0e7a-4bf5-9f35-49451883a124",
+      "name": "GOOGLE_DOC_AGENT",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=log the agent prvious response in google sheets",
+        "options": {
+          "systemMessage": "=Invoke the MCP tool google Sheets.\n\nUse the most recently generated agent response along with the citation link as the content body.\n\nGoogle Sheets: Append the content as a new entry using the predefined column structure."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2240,
+        288
+      ],
+      "id": "52d59c29-2c83-48bf-bb11-bba161bde44a",
+      "name": "SHEETS",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        512
+      ],
+      "id": "7db64a26-4147-4946-a5c7-a358ebdf3ee3",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KKebtSD5dLnsndX3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        64
+      ],
+      "id": "37ab2c03-b9e2-4b86-b138-110e0918217f",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KKebtSD5dLnsndX3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        -400
+      ],
+      "id": "0d0d9432-ed81-4c8a-8b1d-e7823e694a0f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KKebtSD5dLnsndX3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Query Data Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "EMAIL_AGENT",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "GOOGLE_DOC_AGENT",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "EMAIL_AGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GOOGLE_DOC_AGENT",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "EMAIL_AGENT",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GOOGLE_DOC_AGENT",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SHEETS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert Data to Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Query Data Tool",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload your file here": {
+      "main": [
+        [
+          {
+            "node": "Insert Data to Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert Data to Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client2": {
+      "ai_tool": [
+        [
+          {
+            "node": "SHEETS",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SHEETS",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "GOOGLE_DOC_AGENT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "EMAIL_AGENT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a5946c7e-9eeb-4317-bba9-a72daa52dc97",
+  "meta": {
+    "templateId": "rag-starter-template",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0b989d83641a7f718404c761ea0625262a456ebc3ddf7d3702d097ada479ed41"
+  },
+  "id": "unnoQgMhwHtPjxtl",
+  "tags": []
+}

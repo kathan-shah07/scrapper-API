@@ -1,0 +1,88 @@
+[
+  {
+    "fund_name": "Nippon India Small Cap Fund Direct Growth",
+    "nav": {
+      "value": "₹183.58",
+      "as_of": "18 Dec 2025"
+    },
+    "fund_size": "₹68,571.85Cr",
+    "aum": "₹709,781.92Cr",
+    "faq": [],
+    "summary": {
+      "fund_category": "Equity",
+      "fund_type": "Small Cap",
+      "risk_level": "Very High Risk",
+      "lock_in_period": "",
+      "rating": null
+    },
+    "minimum_investments": {
+      "min_sip": "₹100",
+      "min_first_investment": "₹100",
+      "min_2nd_investment_onwards": "₹100"
+    },
+    "returns": {
+      "1y": "",
+      "3y": "20.8%",
+      "5y": "28.2%",
+      "since_inception": "24.2%"
+    },
+    "category_info": {
+      "category": "Equity Small",
+      "category_average_annualised": {
+        "3y": "18.2%",
+        "5y": "22.8%"
+      },
+      "rank_within_category": {
+        "1y": 7,
+        "3y": 2,
+        "5y": 1
+      }
+    },
+    "cost_and_tax": {
+      "expense_ratio": "0.64%",
+      "expense_ratio_effective_from": "18 Dec 2025",
+      "exit_load": "Exit load of 1% if redeemed within 1 days",
+      "stamp_duty": "0.005%",
+      "tax_implication": "If you redeem within one year, returns are taxed at 20%. If you redeem after one year, returns exceeding Rs 1.25 lakh in a financial year are taxed at 12.5%. Understand terms Check past data Fund mana"
+    },
+    "top_5_holdings": [
+      {
+        "name": "Multi Commodity Exchange Of India Ltd.",
+        "asset_pct": "2.72%"
+      },
+      {
+        "name": "HDFC Bank Ltd.",
+        "asset_pct": "1.95%"
+      },
+      {
+        "name": "State Bank of India",
+        "asset_pct": "1.48%"
+      },
+      {
+        "name": "Karur Vysya Bank Ltd.",
+        "asset_pct": "1.38%"
+      },
+      {
+        "name": "Bharat Heavy Electricals Ltd.",
+        "asset_pct": "1.25%"
+      }
+    ],
+    "advanced_ratios": {
+      "pe_ratio": "29.46",
+      "pb_ratio": "3.78",
+      "alpha": "3.51",
+      "beta": "0.85",
+      "sharpe_ratio": "0.92",
+      "sortino_ratio": "1.32",
+      "top_5_weight_pct": "9%",
+      "top_20_weight_pct": "25%"
+    },
+    "peer_comparison_sample": [],
+    "source": {
+      "site": "Groww",
+      "page_ref": "turn0view0"
+    },
+    "source_url": "https://groww.in/mutual-funds/nippon-india-small-cap-fund-direct-growth",
+    "last_scraped": "2025-12-19"
+  }
+]

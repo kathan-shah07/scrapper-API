@@ -18,9 +18,6 @@ venv.bak/
 *~
 
 # Data directories
-data/
-*.html
-*.json
 
 # Testing
 .pytest_cache/

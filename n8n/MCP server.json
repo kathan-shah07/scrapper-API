@@ -1,0 +1,194 @@
+{
+  "name": "MCP server",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "af91cac1-69c4-43de-915b-21b2c3894af6"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        272,
+        496
+      ],
+      "id": "2d10cc01-bda2-4bfa-a4cd-36ba01cca2a8",
+      "name": "MCP Server Trigger",
+      "webhookId": "af91cac1-69c4-43de-915b-21b2c3894af6"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Send a message in Gmail",
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        768
+      ],
+      "id": "ec52cdd7-a561-4fe6-8149-5aad10b3aa7b",
+      "name": "Send a message in Gmail",
+      "webhookId": "19a667cd-1f51-4b40-b9b4-0807fce89d26",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pF0IRWDQJuRq05AZ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "=https://docs.google.com/document/d/1736uhuMR01kxmAU5KGA-Mg4x4XoaEOsraBvjBY0zLek/edit?usp=sharing",
+        "simple": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Simplify', ``, 'boolean') }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('actionFields0_Text', ``, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        400,
+        800
+      ],
+      "id": "315716e8-93b4-43e1-b5d1-d8a9c4ebfc93",
+      "name": "update google doc",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "41VISNuNIFYntjkF",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1-R2Kafyqf1XHqMOICUt62ANQKUW5ioy5U8Zu9Se7ZPk",
+          "mode": "list",
+          "cachedResultName": "Log-n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-R2Kafyqf1XHqMOICUt62ANQKUW5ioy5U8Zu9Se7ZPk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-R2Kafyqf1XHqMOICUt62ANQKUW5ioy5U8Zu9Se7ZPk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "agent_output"
+          ],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_query",
+              "displayName": "user_query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent_output",
+              "displayName": "agent_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        608,
+        800
+      ],
+      "id": "435c675f-4e62-46c0-9628-36a64de42eb8",
+      "name": "update google sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7WaPBRrmLENgz3eu",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update google doc": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update google sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "694f87cb-f8a2-4435-81ea-7660df08d7f5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0b989d83641a7f718404c761ea0625262a456ebc3ddf7d3702d097ada479ed41"
+  },
+  "id": "RAl4opLTJQG3t8vU",
+  "tags": []
+}
