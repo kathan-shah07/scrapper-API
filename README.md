@@ -335,10 +335,10 @@ AI Agent → If Node → Route to specific agent → MCP Client → External Too
 
 **MCP Tools Available:**
 1. **Gmail Tool**: Send emails with agent response
-![Smaple Gmail note](MCP_Gmail.png)
+![Sample Gmail note](MCP_Gmail.png)
 
 2. **Google Docs Tool**: Update Google Docs with content
-![Smaple Google Doc note](MCP_Google_doc.png)
+![Sample Google Doc note](MCP_Google_doc.png)
 
 3. **Google Sheets Tool**: Log interactions in spreadsheet
 
